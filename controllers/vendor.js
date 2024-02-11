@@ -48,15 +48,13 @@ exports.update = (req, res) => {
 	});
 };
 
-exports.list = (req, res) => {
-	Vendor.find().exec((err, data) => {
-		if (err) {
-			return res.status(400).json({
-				error: err,
-			});
-		}
+exports.list = async (req, res) => {
+	try {
+		const data = await Vendor.find().exec();
 		res.json(data);
-	});
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
 exports.remove = (req, res) => {

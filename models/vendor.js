@@ -1,6 +1,7 @@
 /** @format */
 
 const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Schema;
 
 const vendorSchema = new mongoose.Schema(
 	{
@@ -11,7 +12,7 @@ const vendorSchema = new mongoose.Schema(
 			default: "",
 		},
 		vendorPhone: {
-			type: Number,
+			type: String,
 			trim: true,
 			lowercase: true,
 			default: "",
@@ -28,8 +29,17 @@ const vendorSchema = new mongoose.Schema(
 			lowercase: true,
 			default: "",
 		},
+
+		thumbnail: {
+			type: Array,
+		},
+		banner: {
+			type: Array,
+		},
+
+		belongsTo: { type: ObjectId, ref: "User" },
 	},
-	{ timestamps: true },
+	{ timestamps: true }
 );
 
 module.exports = mongoose.model("Vendor", vendorSchema);

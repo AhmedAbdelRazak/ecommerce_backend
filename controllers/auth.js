@@ -1,9 +1,10 @@
 /** @format */
 
 const User = require("../models/user");
+const Vendor = require("../models/vendor");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
-const { expressjwt: expressJwt } = require('express-jwt');
+const { expressjwt: expressJwt } = require("express-jwt");
 const { OAuth2Client } = require("google-auth-library");
 const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -11,93 +12,112 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const ahmed2 = "ahmedabdelrazzak1001010@gmail.com";
 
 exports.signup = async (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name) return res.status(400).send("Please fill in your name.");
-    if (!password) return res.status(400).send("Please fill in your password.");
-    if (password.length < 6)
-        return res.status(400).json({ error: "Passwords should be 6 characters or more" });
+	const { name, email, password, role } = req.body;
+	if (!name) return res.status(400).send("Please fill in your name.");
+	if (!email) return res.status(400).send("Please fill in your email.");
+	if (!password) return res.status(400).send("Please fill in your password.");
+	if (password.length < 6)
+		return res
+			.status(400)
+			.json({ error: "Passwords should be 6 characters or more" });
 
-    let userExist = await User.findOne({ email }).exec();
-    if (userExist)
-        return res.status(400).json({
-            error: "User already exists, please try a different email/phone",
-        });
+	let userExist = await User.findOne({ email }).exec();
+	if (userExist)
+		return res.status(400).json({
+			error: "User already exists, please try a different email/phone",
+		});
 
-    const user = new User(req.body);
+	const user = new User(req.body);
 
-    try {
-        await user.save();
-        user.salt = undefined;
-        user.hashed_password = undefined;
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-        res.cookie("t", token, { expire: "1d" });
+	try {
+		await user.save();
+		// Remove sensitive information before sending user object
+		user.salt = undefined;
+		user.hashed_password = undefined;
 
-        res.json({ user });
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ error: error.message });
-    }
+		const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+			expiresIn: "1d",
+		});
+		res.cookie("t", token, { expire: new Date() + 9999 });
 
-    // Remaining code (if any)...
+		// If the user's role is 4000, proceed to create a vendor associated with this user
+		if (role === 4000) {
+			// Create vendor data, ensuring 'belongsTo' field is set to the user's _id
+			const vendorData = {
+				...req.body, // Include other vendor-related data from req.body
+				belongsTo: user._id, // Link vendor to the newly created user
+			};
+			const vendor = new Vendor(vendorData);
+			await vendor.save(); // Save the vendor document in the database
+
+			// Optionally, adjust the response or perform additional actions as needed
+		}
+
+		// Respond with the user and token, considering privacy for sensitive fields
+		res.json({ user: { _id: user._id, name, email, role }, token });
+	} catch (error) {
+		console.log(error);
+		res.status(400).json({ error: error.message });
+	}
 };
 
 exports.signin = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email }).exec();
-        if (!user) {
-            return res.status(400).json({
-                error: "User is Unavailable, Please Register or Try Again!!",
-            });
-        }
+	const { email, password } = req.body;
+	try {
+		const user = await User.findOne({ email }).exec();
+		if (!user) {
+			return res.status(400).json({
+				error: "User is Unavailable, Please Register or Try Again!!",
+			});
+		}
 
-        // If user is found, make sure the email and password match
-        // (Assuming you have an authenticate method in user model)
-        if (!user.authenticate(password)) {
-            return res.status(401).json({
-                error: "Email or Password is incorrect, Please Try Again!!",
-            });
-        }
+		// If user is found, make sure the email and password match
+		// (Assuming you have an authenticate method in user model)
+		if (!user.authenticate(password)) {
+			return res.status(401).json({
+				error: "Email or Password is incorrect, Please Try Again!!",
+			});
+		}
 
-        // Generate a signed token with user id and secret
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+		// Generate a signed token with user id and secret
+		const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
 
-        // Persist the token as 't' in cookie with expiry date
-        res.cookie("t", token, { expire: new Date() + 1 });
+		// Persist the token as 't' in cookie with expiry date
+		res.cookie("t", token, { expire: new Date() + 1 });
 
-        // Return response with user and token to frontend client
-        const {
-            _id,
-            name,
-            email: userEmail,
-            role,
-            activePoints,
-            activeUser,
-            employeeImage,
-            userRole,
-            userBranch,
-            userStore,
-        } = user;
+		// Return response with user and token to frontend client
+		const {
+			_id,
+			name,
+			email: userEmail,
+			role,
+			activePoints,
+			activeUser,
+			employeeImage,
+			userRole,
+			userBranch,
+			userStore,
+		} = user;
 
-        return res.json({
-            token,
-            user: {
-                _id,
-                email: userEmail,
-                name,
-                role,
-                activePoints,
-                activeUser,
-                employeeImage,
-                userRole,
-                userBranch,
-                userStore,
-            },
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ error: error.message });
-    }
+		return res.json({
+			token,
+			user: {
+				_id,
+				email: userEmail,
+				name,
+				role,
+				activePoints,
+				activeUser,
+				employeeImage,
+				userRole,
+				userBranch,
+				userStore,
+			},
+		});
+	} catch (error) {
+		console.log(error);
+		res.status(400).json({ error: error.message });
+	}
 };
 
 exports.signout = (req, res) => {
@@ -106,9 +126,9 @@ exports.signout = (req, res) => {
 };
 
 exports.requireSignin = expressJwt({
-    secret: process.env.JWT_SECRET,
-    algorithms: ['HS256'],
-    userProperty: 'auth'
+	secret: process.env.JWT_SECRET,
+	algorithms: ["HS256"],
+	userProperty: "auth",
 });
 
 exports.isAuth = (req, res, next) => {
@@ -166,7 +186,7 @@ exports.forgotPassword = (req, res) => {
 			process.env.JWT_RESET_PASSWORD,
 			{
 				expiresIn: "10m",
-			},
+			}
 		);
 
 		const emailData_Reset = {
@@ -282,7 +302,7 @@ exports.resetPassword = (req, res) => {
 						});
 					});
 				});
-			},
+			}
 		);
 	}
 };
@@ -320,7 +340,7 @@ exports.googleLogin = (req, res) => {
 							const token = jwt.sign(
 								{ _id: data._id },
 								process.env.JWT_SECRET,
-								{ expiresIn: "7d" },
+								{ expiresIn: "7d" }
 							);
 							const { _id, email, name, role } = data;
 							return res.json({

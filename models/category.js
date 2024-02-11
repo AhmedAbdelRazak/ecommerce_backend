@@ -40,7 +40,7 @@ const categorySchema = new mongoose.Schema(
 			type: Array,
 		},
 	},
-	{ timestamps: true },
+	{ timestamps: true }
 );
 
 module.exports = mongoose.model("Category", categorySchema);

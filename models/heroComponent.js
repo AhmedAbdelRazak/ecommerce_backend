@@ -17,6 +17,9 @@ const heroComponentSchema = new mongoose.Schema(
 		thumbnail3: {
 			type: Array,
 		},
+		thumbnail4: {
+			type: Array,
+		},
 		thumbnail_Phone: {
 			type: Array,
 		},
@@ -24,6 +27,9 @@ const heroComponentSchema = new mongoose.Schema(
 			type: Array,
 		},
 		thumbnail3_Phone: {
+			type: Array,
+		},
+		thumbnail4_Phone: {
 			type: Array,
 		},
 		hyper_link: {
@@ -35,8 +41,11 @@ const heroComponentSchema = new mongoose.Schema(
 		hyper_link3: {
 			type: String,
 		},
+		hyper_link4: {
+			type: String,
+		},
 	},
-	{ timestamps: true },
+	{ timestamps: true }
 );
 
 module.exports = mongoose.model("HeroComponent", heroComponentSchema);

@@ -292,8 +292,9 @@ const productSchema = new mongoose.Schema(
 				ratedBy: { type: ObjectId, ref: "User" },
 			},
 		],
+		belongsTo: { type: ObjectId, ref: "Vendor" },
 	},
-	{ timestamps: true },
+	{ timestamps: true }
 );
 
 module.exports = mongoose.model("Product", productSchema);

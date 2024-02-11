@@ -4,32 +4,40 @@ const Product = require("../models/product");
 const User = require("../models/user");
 
 exports.productById = async (req, res, next, id) => {
-    try {
-        const product = await Product.findById(id)
-            .populate("ratings.ratedBy", "_id name email")
-            .populate("comments.postedBy", "_id name email")
-            .populate("subcategory", "_id SubcategoryName SubcategorySlug subCategoryStatus")
-            .populate("category", "_id categoryName categorySlug thumbnail categoryName_Arabic")
-            .populate("parentName", "_id parentName thumbnail")
-            .populate("gender", "_id genderName thumbnail")
-            .populate("addedByEmployee", "_id name role")
-            .populate("updatedByEmployee", "_id name role")
-            .populate("relatedProducts", "_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage")
-            .exec();
+	try {
+		const product = await Product.findById(id)
+			.populate("ratings.ratedBy", "_id name email")
+			.populate("comments.postedBy", "_id name email")
+			.populate(
+				"subcategory",
+				"_id SubcategoryName SubcategorySlug subCategoryStatus"
+			)
+			.populate(
+				"category",
+				"_id categoryName categorySlug thumbnail categoryName_Arabic"
+			)
+			.populate("parentName", "_id parentName thumbnail")
+			.populate("gender", "_id genderName thumbnail")
+			.populate("addedByEmployee", "_id name role")
+			.populate("updatedByEmployee", "_id name role")
+			.populate(
+				"relatedProducts",
+				"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage"
+			)
+			.exec();
 
-        if (!product) {
-            return res.status(400).json({
-                error: "Product not found",
-            });
-        }
+		if (!product) {
+			return res.status(400).json({
+				error: "Product not found",
+			});
+		}
 
-        req.product = product;
-        next();
-    } catch (err) {
-        res.status(400).json({ error: "Product not found" });
-    }
+		req.product = product;
+		next();
+	} catch (err) {
+		res.status(400).json({ error: "Product not found" });
+	}
 };
-
 
 exports.read = (req, res) => {
 	return res.json(req.product);
@@ -47,29 +55,37 @@ exports.create = async (req, res) => {
 };
 
 exports.listProductsNoFilter = async (req, res) => {
-    let order = req.query.order ? req.query.order : 'desc';
-    let sortBy = req.query.sortBy ? req.query.sortBy : 'viewsCount';
-    let limit = req.query.limit ? parseInt(req.query.limit) : 200;
+	let order = req.query.order ? req.query.order : "desc";
+	let sortBy = req.query.sortBy ? req.query.sortBy : "viewsCount";
+	let limit = req.query.limit ? parseInt(req.query.limit) : 200;
 
-    try {
-        const products = await Product.find()
-            .populate('category', '_id categoryName categorySlug thumbnail categoryName_Arabic')
-            .populate('parentName', '_id parentName thumbnail')
-            .populate('subcategory', '_id SubcategoryName SubcategorySlug thumbnail SubcategoryName_Arabic')
-            .populate('gender', '_id genderName thumbnail')
-            .populate('addedByEmployee', '_id name role')
-            .populate('updatedByEmployee', '_id name role')
-            .populate('relatedProducts', '_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage')
-            .sort([[sortBy, order]])
-            .limit(limit);
+	try {
+		const products = await Product.find()
+			.populate(
+				"category",
+				"_id categoryName categorySlug thumbnail categoryName_Arabic"
+			)
+			.populate("parentName", "_id parentName thumbnail")
+			.populate(
+				"subcategory",
+				"_id SubcategoryName SubcategorySlug thumbnail SubcategoryName_Arabic"
+			)
+			.populate("gender", "_id genderName thumbnail")
+			.populate("addedByEmployee", "_id name role")
+			.populate("updatedByEmployee", "_id name role")
+			.populate(
+				"relatedProducts",
+				"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage"
+			)
+			.sort([[sortBy, order]])
+			.limit(limit);
 
-        res.json(products);
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ error: error.message });
-    }
+		res.json(products);
+	} catch (error) {
+		console.log(error);
+		res.status(400).json({ error: error.message });
+	}
 };
-
 
 exports.update = (req, res) => {
 	console.log(req.body);
@@ -128,31 +144,36 @@ exports.update = (req, res) => {
 };
 
 exports.listRelated = async (req, res) => {
-    let limit = req.query.limit ? parseInt(req.query.limit) : 6;
+	let limit = req.query.limit ? parseInt(req.query.limit) : 6;
 
-    try {
-        const products = await Product.find({ _id: { $ne: req.product }, category: req.product.category })
-            .select("-photo -photo2 -photo3 -photo4 -photo5")
-            .limit(limit)
-            .populate("category", "_id name")
-            .populate("parentName", "_id parentName thumbnail")
-            .populate("subcategory", "_id SubcategoryName SubcategorySlug subCategoryStatus")
-            .exec();
+	try {
+		const products = await Product.find({
+			_id: { $ne: req.product },
+			category: req.product.category,
+		})
+			.select("-photo -photo2 -photo3 -photo4 -photo5")
+			.limit(limit)
+			.populate("category", "_id name")
+			.populate("parentName", "_id parentName thumbnail")
+			.populate(
+				"subcategory",
+				"_id SubcategoryName SubcategorySlug subCategoryStatus"
+			)
+			.exec();
 
-        res.json(products);
-    } catch (err) {
-        res.status(400).json({ error: "Products not found" });
-    }
+		res.json(products);
+	} catch (err) {
+		res.status(400).json({ error: "Products not found" });
+	}
 };
 
-
 exports.listCategories = async (req, res) => {
-    try {
-        const categories = await Product.distinct("category").exec();
-        res.json(categories);
-    } catch (err) {
-        res.status(400).json({ error: "Categories not found" });
-    }
+	try {
+		const categories = await Product.distinct("category").exec();
+		res.json(categories);
+	} catch (err) {
+		res.status(400).json({ error: "Categories not found" });
+	}
 };
 
 exports.list = (req, res) => {
@@ -163,20 +184,20 @@ exports.list = (req, res) => {
 	Product.find()
 		.populate(
 			"category",
-			"_id categoryName categorySlug thumbnail categoryName_Arabic",
+			"_id categoryName categorySlug thumbnail categoryName_Arabic"
 		)
 		.populate("parentName", "_id parentName thumbnail")
 		.populate("comments", "text created")
 		.populate("comments.postedBy", "_id name email")
 		.populate(
 			"subcategory",
-			"_id SubcategoryName SubcategorySlug subCategoryStatus",
+			"_id SubcategoryName SubcategorySlug subCategoryStatus"
 		)
 		.populate("addedByEmployee", "_id name role")
 		.populate("updatedByEmployee", "_id name role")
 		.populate(
 			"relatedProducts",
-			"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage",
+			"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage"
 		)
 		.sort([[sortBy, order]])
 		.limit(limit)
@@ -216,16 +237,16 @@ exports.listBySearch = (req, res) => {
 	Product.find(findArgs)
 		.populate(
 			"category",
-			"_id categoryName categorySlug thumbnail categoryName_Arabic",
+			"_id categoryName categorySlug thumbnail categoryName_Arabic"
 		)
 		.populate("parentName", "_id parentName thumbnail")
 		.populate(
 			"subcategory",
-			"_id SubcategoryName SubcategorySlug subCategoryStatus",
+			"_id SubcategoryName SubcategorySlug subCategoryStatus"
 		)
 		.populate(
 			"relatedProducts",
-			"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage",
+			"_id productName productName_Arabic productSKU slug slug_Arabic price priceAfterDiscount quantity images activeProduct category subcategory productAttributes thumbnailImage"
 		)
 		.sort([[sortBy, order]])
 		.exec((err, data) => {
@@ -268,161 +289,158 @@ exports.listSearch = (req, res) => {
 };
 
 exports.like = async (req, res) => {
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId,
-            { $push: { likes: req.body.userId } },
-            { new: true }
-        ).exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ $push: { likes: req.body.userId } },
+			{ new: true }
+		).exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
 exports.unlike = async (req, res) => {
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId,
-            { $pull: { likes: req.body.userId } },
-            { new: true }
-        ).exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ $pull: { likes: req.body.userId } },
+			{ new: true }
+		).exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
-
 exports.viewsCounter = async (req, res) => {
-    let counter = req.body.counter;
+	let counter = req.body.counter;
 
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId, 
-            { viewsCount: counter },
-            { new: true }  // Add this if you want to return the updated document
-        ).exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ viewsCount: counter },
+			{ new: true } // Add this if you want to return the updated document
+		).exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
 exports.viewsByUser = async (req, res) => {
-    var currentdate = new Date();
-    var datetime =
-        currentdate.getDate() +
-        "/" +
-        (currentdate.getMonth() + 1) +
-        "/" +
-        currentdate.getFullYear() +
-        " " +
-        currentdate.getHours() +
-        ":" +
-        currentdate.getMinutes() +
-        ":" +
-        currentdate.getSeconds();
+	var currentdate = new Date();
+	var datetime =
+		currentdate.getDate() +
+		"/" +
+		(currentdate.getMonth() + 1) +
+		"/" +
+		currentdate.getFullYear() +
+		" " +
+		currentdate.getHours() +
+		":" +
+		currentdate.getMinutes() +
+		":" +
+		currentdate.getSeconds();
 
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId,
-            { $push: { views: datetime } },
-            { new: true }  // Add this if you want to return the updated document
-        ).exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ $push: { views: datetime } },
+			{ new: true } // Add this if you want to return the updated document
+		).exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
 exports.comment = async (req, res) => {
-    let comment = req.body.comment;
-    comment.postedBy = req.body.userId;
-    // console.log(req.body, "comments");
+	let comment = req.body.comment;
+	comment.postedBy = req.body.userId;
+	// console.log(req.body, "comments");
 
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId,
-            { $push: { comments: comment } },
-            { new: true }
-        )
-        .populate("comments.postedBy", "_id name email")
-        // .populate("postedBy", "_id name email")
-        .exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ $push: { comments: comment } },
+			{ new: true }
+		)
+			.populate("comments.postedBy", "_id name email")
+			// .populate("postedBy", "_id name email")
+			.exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
 
 exports.uncomment = async (req, res) => {
-    let comment = req.body.comment;
+	let comment = req.body.comment;
 
-    try {
-        const result = await Product.findByIdAndUpdate(
-            req.body.productId,
-            { $pull: { comments: { _id: comment._id } } },
-            { new: true }
-        )
-        .populate("comments.postedBy", "_id name email")
-        // .populate("postedBy", "_id name email")
-        .exec();
+	try {
+		const result = await Product.findByIdAndUpdate(
+			req.body.productId,
+			{ $pull: { comments: { _id: comment._id } } },
+			{ new: true }
+		)
+			.populate("comments.postedBy", "_id name email")
+			// .populate("postedBy", "_id name email")
+			.exec();
 
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+		res.json(result);
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
-
 
 exports.productStar = async (req, res) => {
-    try {
-        const product = await Product.findById(req.params.productId).exec();
-        const user = await User.findById(req.body.userId).exec();
-        const { star } = req.body;
+	try {
+		const product = await Product.findById(req.params.productId).exec();
+		const user = await User.findById(req.body.userId).exec();
+		const { star } = req.body;
 
-        // Check if currently logged in user has already added a rating to this product
-        let existingRatingObject = product.ratings.find(
-            (ele) => ele.ratedBy.toString() === user._id.toString(),
-        );
+		// Check if currently logged in user has already added a rating to this product
+		let existingRatingObject = product.ratings.find(
+			(ele) => ele.ratedBy.toString() === user._id.toString()
+		);
 
-        // If user hasn't left a rating yet, push it
-        if (existingRatingObject === undefined) {
-            let ratingAdded = await Product.findByIdAndUpdate(
-                product._id,
-                {
-                    $push: { ratings: { star, ratedBy: user._id } },
-                },
-                { new: true },
-            ).exec();
+		// If user hasn't left a rating yet, push it
+		if (existingRatingObject === undefined) {
+			let ratingAdded = await Product.findByIdAndUpdate(
+				product._id,
+				{
+					$push: { ratings: { star, ratedBy: user._id } },
+				},
+				{ new: true }
+			).exec();
 
-            res.json(ratingAdded);
-        } else {
-            // If user has already left a rating, update it
-            const ratingUpdated = await Product.updateOne(
-                {
-                    _id: product._id,
-                    'ratings._id': existingRatingObject._id,
-                },
-                {
-                    $set: { 'ratings.$.star': star },
-                },
-                { new: true },
-            ).exec();
+			res.json(ratingAdded);
+		} else {
+			// If user has already left a rating, update it
+			const ratingUpdated = await Product.updateOne(
+				{
+					_id: product._id,
+					"ratings._id": existingRatingObject._id,
+				},
+				{
+					$set: { "ratings.$.star": star },
+				},
+				{ new: true }
+			).exec();
 
-            res.json(ratingUpdated);
-        }
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
+			res.json(ratingUpdated);
+		}
+	} catch (err) {
+		res.status(400).json({ error: err.message });
+	}
 };
-
 
 exports.decreaseQuantity = (req, res, next) => {
 	let bulkOps = req.body.order.productsNoVariable.map((item) => {
@@ -463,8 +481,8 @@ exports.decreaseQtyVariables = (req, res, next) => {
 								item.quantity <= 0
 									? 0
 									: item.quantity < item.OrderedQty
-									? 0
-									: -item.OrderedQty,
+										? 0
+										: -item.OrderedQty,
 						},
 					},
 
@@ -513,11 +531,11 @@ exports.decreaseQtyVariables = (req, res, next) => {
 exports.decreaseQtyVariablesForEditing = (req, res, next) => {
 	console.log(
 		req.body.order.oldProducts.map((i) => i.SubSKU),
-		"req.body.order.oldProducts",
+		"req.body.order.oldProducts"
 	);
 	console.log(
 		req.body.order.newProducts.map((i) => i.SubSKU),
-		"req.body.order.newProducts",
+		"req.body.order.newProducts"
 	);
 
 	let bulkOps = req.body.order.newProducts.map((item) => {
@@ -533,8 +551,8 @@ exports.decreaseQtyVariablesForEditing = (req, res, next) => {
 							item.quantity <= 0
 								? 0
 								: item.quantity < item.OrderedQty
-								? 0
-								: -item.OrderedQty,
+									? 0
+									: -item.OrderedQty,
 					},
 				},
 
@@ -808,8 +826,8 @@ exports.exchangeProductUpate = (req, res, next) => {
 							item.quantity <= 0
 								? 0
 								: item.quantity <= item.OrderedQty
-								? 0
-								: -item.OrderedQty,
+									? 0
+									: -item.OrderedQty,
 					},
 				},
 
@@ -867,4 +885,94 @@ exports.exchangeRevert = (req, res, next) => {
 		}
 		next();
 	});
+};
+
+exports.getProductsList = async (req, res) => {
+	const { page, records, filters } = req.params;
+	const pageSize = parseInt(records);
+	let skip = (parseInt(page) - 1) * pageSize;
+
+	let query = { activeProduct: true };
+	let sort = {};
+
+	// Adjust the query based on the filter
+	if (filters === "newarrival") {
+		sort = { createdAt: -1 };
+	} else if (filters === "featured") {
+		query.featuredProduct = true;
+	} else if (filters === "mostliked") {
+		sort = { "likes.length": -1 };
+	} else if (
+		filters === "birthday" ||
+		filters === "accessories" ||
+		filters === "fashion"
+	) {
+		query.$or = [
+			{ "category.categoryName": { $regex: filters, $options: "i" } },
+			{ "subcategory.SubcategoryName": { $regex: filters, $options: "i" } },
+			{ "parent.parentName": { $regex: filters, $options: "i" } },
+		];
+	}
+
+	try {
+		const products = await Product.find(query)
+			.populate("category")
+			.populate("subcategory")
+			.populate("gender")
+			.populate("belongsTo")
+			.populate("addedByEmployee")
+			.populate("updatedByEmployee")
+			.sort(sort);
+
+		// Function to get distinct colors for newarrival
+		const getDistinctColors = (productAttributes) => {
+			const unique = [];
+			const map = new Map();
+			for (const item of productAttributes) {
+				if (!map.has(item.color)) {
+					map.set(item.color, true); // set any value to Map
+					unique.push(item);
+				}
+			}
+			return unique;
+		};
+
+		// Expand products based on attributes
+		let expandedProducts = [];
+		products.forEach((product) => {
+			if (product.addVariables && product.productAttributes.length > 0) {
+				let attributesToExpand = product.productAttributes;
+
+				// If newarrival, only use distinct colors
+				if (filters === "newarrival" || filters === undefined) {
+					attributesToExpand = getDistinctColors(product.productAttributes);
+				}
+
+				attributesToExpand.forEach((attribute) => {
+					expandedProducts.push({
+						...product.toObject(),
+						productAttributes: attribute,
+					});
+				});
+			} else {
+				expandedProducts.push(product);
+			}
+		});
+
+		// Apply pagination after expansion
+		const paginatedProducts = expandedProducts.slice(skip, skip + pageSize);
+
+		res.json({
+			success: true,
+			data: paginatedProducts,
+			message: "Products fetched successfully",
+			total: expandedProducts.length, // Total number of products after expansion
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: "An error occurred while fetching products",
+			error: error.message,
+		});
+	}
 };

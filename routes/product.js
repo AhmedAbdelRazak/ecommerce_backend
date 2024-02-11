@@ -26,6 +26,7 @@ const {
 	listBySearch,
 	listSearch,
 	remove,
+	getProductsList,
 } = require("../controllers/product");
 
 router.post("/product/create/:userId", requireSignin, isAuth, isAdmin, create);
@@ -34,7 +35,7 @@ router.put(
 	requireSignin,
 	isAuth,
 	isAdmin,
-	update,
+	update
 );
 
 router.post("/products/by/search", listBySearch);
@@ -48,7 +49,7 @@ router.delete(
 	requireSignin,
 	isAuth,
 	isAdmin,
-	remove,
+	remove
 );
 
 // like unlike
@@ -74,15 +75,17 @@ router.post(
 	requireSignin,
 	isAuth,
 	isOperations,
-	create,
+	create
 );
 router.put(
 	"/product/operations/:productId/:userId",
 	requireSignin,
 	isAuth,
 	isOperations,
-	update,
+	update
 );
+
+router.get("/products/list/:page/:records/:filters", getProductsList);
 
 router.param("userId", userById);
 router.param("productId", productById);
