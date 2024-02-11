@@ -892,81 +892,55 @@ exports.getProductsList = async (req, res) => {
 	const pageSize = parseInt(records);
 	let skip = (parseInt(page) - 1) * pageSize;
 
-	let query = { activeProduct: true };
-	let sort = {};
+	let matchQuery = { activeProduct: true };
 
-	// Adjust the query based on the filter
+	let pipeline = [
+		{
+			$match: matchQuery,
+		},
+		{
+			$lookup: {
+				from: "parents",
+				localField: "parentName",
+				foreignField: "_id",
+				as: "parentInfo",
+			},
+		},
+		{
+			$unwind: {
+				path: "$parentInfo",
+				preserveNullAndEmptyArrays: true, // To keep products without parentInfo
+			},
+		},
+	];
+
+	// Sorting by "newarrival", "mostliked", or applying no sort
 	if (filters === "newarrival") {
-		sort = { createdAt: -1 };
-	} else if (filters === "featured") {
-		query.featuredProduct = true;
+		pipeline.push({ $sort: { createdAt: -1 } });
 	} else if (filters === "mostliked") {
-		sort = { "likes.length": -1 };
-	} else if (
-		filters === "birthday" ||
-		filters === "accessories" ||
-		filters === "fashion"
-	) {
-		query.$or = [
-			{ "category.categoryName": { $regex: filters, $options: "i" } },
-			{ "subcategory.SubcategoryName": { $regex: filters, $options: "i" } },
-			{ "parent.parentName": { $regex: filters, $options: "i" } },
-		];
+		pipeline.push({ $sort: { "likes.length": -1 } });
 	}
 
-	try {
-		const products = await Product.find(query)
-			.populate("category")
-			.populate("subcategory")
-			.populate("gender")
-			.populate("belongsTo")
-			.populate("addedByEmployee")
-			.populate("updatedByEmployee")
-			.sort(sort);
-
-		// Function to get distinct colors for newarrival
-		const getDistinctColors = (productAttributes) => {
-			const unique = [];
-			const map = new Map();
-			for (const item of productAttributes) {
-				if (!map.has(item.color)) {
-					map.set(item.color, true); // set any value to Map
-					unique.push(item);
-				}
-			}
-			return unique;
-		};
-
-		// Expand products based on attributes
-		let expandedProducts = [];
-		products.forEach((product) => {
-			if (product.addVariables && product.productAttributes.length > 0) {
-				let attributesToExpand = product.productAttributes;
-
-				// If newarrival, only use distinct colors
-				if (filters === "newarrival" || filters === undefined) {
-					attributesToExpand = getDistinctColors(product.productAttributes);
-				}
-
-				attributesToExpand.forEach((attribute) => {
-					expandedProducts.push({
-						...product.toObject(),
-						productAttributes: attribute,
-					});
-				});
-			} else {
-				expandedProducts.push(product);
-			}
+	// Filtering for "Gifts", "accessories", or "Fashion"
+	if (["Gifts", "accessories", "Fashion"].includes(filters)) {
+		pipeline.push({
+			$match: {
+				$or: [{ "parentInfo.parentName": { $regex: filters, $options: "i" } }],
+			},
 		});
+	}
 
-		// Apply pagination after expansion
-		const paginatedProducts = expandedProducts.slice(skip, skip + pageSize);
+	// Pagination
+	pipeline.push({ $skip: skip }, { $limit: pageSize });
+
+	try {
+		const products = await Product.aggregate(pipeline);
 
 		res.json({
 			success: true,
-			data: paginatedProducts,
+			data: products,
 			message: "Products fetched successfully",
-			total: expandedProducts.length, // Total number of products after expansion
+			total: products.length,
 		});
 	} catch (error) {
 		res.status(500).json({
